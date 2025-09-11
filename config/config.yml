@@ -3,3 +3,8 @@ server:
 
 database:
   ssl_mode: "disable"
+
+retry:
+  attempts: 3,
+  delay: 50ms,
+  backoff: 2
