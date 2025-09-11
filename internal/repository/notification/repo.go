@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/delayed-notifier/internal/model"
+
 	"github.com/google/uuid"
 	"github.com/wb-go/wbf/dbpg"
+
+	"github.com/aliskhannn/delayed-notifier/internal/model"
 )
 
 var ErrNotificationNotFound = errors.New("notification not found")

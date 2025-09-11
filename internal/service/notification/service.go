@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/delayed-notifier/internal/model"
+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	wbfredis "github.com/wb-go/wbf/redis"
 	"github.com/wb-go/wbf/retry"
 	"github.com/wb-go/wbf/zlog"
+
+	"github.com/aliskhannn/delayed-notifier/internal/model"
 )
 
 type notifRepo interface {

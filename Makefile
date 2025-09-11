@@ -1,6 +1,6 @@
 # Format Go code using goimports
 format:
-	goimports -local github.com/aliskhannn/calendar-service -w .
+	goimports -local github.com/aliskhannn/delayed-notifier -w .
 
 # Run linters: vet + golangci-lint
 lint:
