@@ -53,6 +53,10 @@ func (r *Repository) GetNotificationStatusByID(ctx context.Context, id uuid.UUID
 		return "", fmt.Errorf("failed to get notification status: %w", err)
 	}
 
+	if status == "" {
+		return "", ErrNotificationNotFound
+	}
+
 	return status, nil
 }
 

@@ -44,12 +44,6 @@ func (s *Service) CreateNotification(ctx context.Context, strategy retry.Strateg
 }
 
 func (s *Service) GetNotificationStatusByID(ctx context.Context, strategy retry.Strategy, id uuid.UUID) (string, error) {
-	//strategy := retry.Strategy{
-	//	Attempts: 3,
-	//	Delay:    50 * time.Millisecond,
-	//	Backoff:  2,
-	//}
-
 	status, err := s.cache.GetWithRetry(ctx, strategy, id.String())
 	if err != nil && !errors.Is(err, redis.Nil) {
 		zlog.Logger.Printf("failed to get notification status from cache %s: %v", id, err)
