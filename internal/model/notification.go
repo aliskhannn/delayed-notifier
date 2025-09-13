@@ -12,6 +12,8 @@ type Notification struct {
 	SendAt    time.Time `json:"send_at"`
 	Status    string    `json:"status"`
 	Retries   int       `json:"retries"`
+	Channel   string    `json:"channel"`
+	To        string    `json:"to"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
