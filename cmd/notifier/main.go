@@ -86,11 +86,11 @@ func main() {
 		"telegram": telegramClient,
 	}
 
-	service := notifsvc.NewService(repo, notifiers, rdb, q.Publisher)
+	service := notifsvc.NewService(repo, q, notifiers, rdb)
 	notifHandler := notification.NewHandler(service, val, cfg)
 	messageHandler := notifmsg.NewHandler(service)
 
-	notifier := worker.NewNotifier(q, messageHandler)
+	notifier := worker.NewNotifier(q, messageHandler, service)
 
 	go notifier.Run(ctx, cfg.Retry, cfg.Workers.Count)
 
