@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TYPE notification_status AS ENUM ('pending', 'sent', 'cancelled');
+CREATE TYPE notification_status AS ENUM ('pending', 'sent', 'cancelled', 'failed');
 -- +goose StatementEnd
 
 -- +goose Down
