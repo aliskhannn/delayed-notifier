@@ -60,21 +60,19 @@ func (r *Repository) GetNotificationStatusByID(ctx context.Context, id uuid.UUID
 	return status, nil
 }
 
-func (r *Repository) DeleteNotification(ctx context.Context, id uuid.UUID) error {
+func (r *Repository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
 	query := `
-		DELETE FROM notifications
-		WHERE id = $1;
+		UPDATE notifications
+		SET status = $1
+		WHERE id = $2;
     `
 
-	res, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, status, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete notification: %w", err)
+		return fmt.Errorf("failed to update notification: %w", err)
 	}
 
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to check rows affected: %w", err)
-	}
+	rows, _ := res.RowsAffected()
 
 	if rows == 0 {
 		return ErrNotificationNotFound
