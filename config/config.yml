@@ -2,9 +2,54 @@ server:
   http_port: ":8080"
 
 database:
-  ssl_mode: "disable"
+  master:
+    host: ${DB_HOST}
+    port: ${DB_PORT}
+    user: ${DB_USER}
+    pass: ${DB_PASSWORD}
+    name: ${DB_NAME}
+    ssl_mode: disable
+
+  slaves:
+    # slave 1
+    - host: ${DB_SLAVE1_HOST}
+      port: ${DB_SLAVE1_PORT}
+      user: ${DB_SLAVE1_USER}
+      pass: ${DB_SLAVE1_PASSWORD}
+      name: ${DB_SLAVE1_NAME}
+      ssl_mode: disable
+    # slave 2
+    - host: ${DB_SLAVE2_HOST}
+      port: ${DB_SLAVE2_PORT}
+      user: ${DB_SLAVE2_USER}
+      pass: ${DB_SLAVE2_PASSWORD}
+      name: ${DB_SLAVE2_NAME}
+      ssl_mode: disable
+
+  max_open_conns: 10
+  max_idle_conns: 5
+  conn_max_lifetime: 30m
 
 retry:
-  attempts: 3,
-  delay: 50ms,
+  attempts: 3
+  delay: 50ms
   backoff: 2
+
+workers:
+  count: 5
+
+redis:
+  address: ${REDIS_ADDRESS}
+  password: ${REDIS_PASSWORD}
+  database: 0
+
+email:
+  smtp_host: ${SMTP_HOST}
+  smtp_port: ${SMTP_PORT}
+  username: ${SMTP_USER}
+  password: ${SMTP_PASS}
+  from: ${SMTP_FROM}
+
+telegram:
+  token: ${TELEGRAM_TOKEN}
+  chat_id: ${TELEGRAM_CHAT_ID}
