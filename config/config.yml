@@ -41,7 +41,7 @@ workers:
 redis:
   address: ${REDIS_ADDRESS}
   password: ${REDIS_PASSWORD}
-  database: 0
+  database: ${REDIS_DATABASE}
 
 email:
   smtp_host: ${SMTP_HOST}
