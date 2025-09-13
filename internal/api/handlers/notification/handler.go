@@ -24,17 +24,21 @@ import (
 type notifService interface {
 	CreateNotification(context.Context, retry.Strategy, model.Notification) (uuid.UUID, error)
 	GetNotificationStatusByID(context.Context, retry.Strategy, uuid.UUID) (string, error)
-	DeleteNotification(context.Context, uuid.UUID) error
+	SetStatus(ctx context.Context, id uuid.UUID, status string) error
 }
 
 type Handler struct {
 	service   notifService
 	validator *validator.Validate
-	cfg       config.Config
+	cfg       *config.Config
 }
 
-func NewHandler(s notifService, v *validator.Validate) *Handler {
-	return &Handler{service: s, validator: v}
+func NewHandler(
+	s notifService,
+	v *validator.Validate,
+	cfg *config.Config,
+) *Handler {
+	return &Handler{service: s, validator: v, cfg: cfg}
 }
 
 func (h *Handler) Create(c *ginext.Context) {
@@ -98,7 +102,7 @@ func (h *Handler) GetStatus(c *ginext.Context) {
 	respond.OK(c.Writer, status)
 }
 
-func (h *Handler) Delete(c *ginext.Context) {
+func (h *Handler) Cancel(c *ginext.Context) {
 	idStr := chi.URLParam(c.Request, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -113,17 +117,17 @@ func (h *Handler) Delete(c *ginext.Context) {
 		return
 	}
 
-	err = h.service.DeleteNotification(c, id)
+	err = h.service.SetStatus(c, id, "cancelled")
 	if err != nil {
 		if errors.Is(err, notification.ErrNotificationNotFound) {
 			zlog.Logger.Warn().Interface("id", id).Err(err).Msg("notification not found")
 			respond.Fail(c.Writer, http.StatusNotFound, fmt.Errorf("notification not found"))
 		}
 
-		zlog.Logger.Error().Err(err).Interface("id", id).Msg("failed to delete notification")
+		zlog.Logger.Error().Err(err).Interface("id", id).Msg("failed to cancel notification")
 		respond.Fail(c.Writer, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 		return
 	}
 
-	respond.OK(c.Writer, "event deleted")
+	respond.OK(c.Writer, "notification cancelled")
 }
