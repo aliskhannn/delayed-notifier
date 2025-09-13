@@ -22,12 +22,12 @@ func NewClient(smtpHost string, smtpPort int, username, password, from string) *
 	}
 }
 
-func (c *Client) Send(to string, subject string, msg string) error {
+func (c *Client) Send(to string, msg string) error {
 	message := mail.NewMessage()
 
 	message.SetHeader("From", c.from)
 	message.SetHeader("To", to)
-	message.SetHeader("Subject", subject)
+	message.SetHeader("Subject", "Notification")
 
 	message.SetBody("text/plain", msg)
 

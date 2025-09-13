@@ -20,16 +20,16 @@ func NewClient(token string) *Client {
 }
 
 type sendMessageRequest struct {
-	ChatID int64  `json:"chat_id"`
+	ChatID string `json:"chat_id"`
 	Text   string `json:"text"`
 }
 
-func (c *Client) Send(chatID int64, text string) error {
+func (c *Client) Send(to string, msg string) error {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", c.token)
 
 	reqBody := sendMessageRequest{
-		ChatID: chatID,
-		Text:   text,
+		ChatID: to,
+		Text:   msg,
 	}
 
 	body, err := json.Marshal(reqBody)
