@@ -30,10 +30,23 @@ database:
   max_idle_conns: 5
   conn_max_lifetime: 30m
 
+rabbitmq:
+  host: "rabbitmq"
+  port: 5672
+  user: "guest"
+  password: "guest"
+  retries: 3
+  pause: 1s
+  exchange: "notify-exchange"
+  queue: "notify-queue"
+  retry_queue: "notify-retry"
+  dlq: "notify-dlq"
+  routing_key: "notify"
+
 retry:
   attempts: 3
   delay: 50ms
-  backoff: 2
+  backoff: 2.0
 
 workers:
   count: 5

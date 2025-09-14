@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/wb-go/wbf/ginext"
@@ -24,7 +24,7 @@ import (
 type notifService interface {
 	CreateNotification(context.Context, retry.Strategy, model.Notification) (uuid.UUID, error)
 	GetNotificationStatusByID(context.Context, retry.Strategy, uuid.UUID) (string, error)
-	SetStatus(ctx context.Context, id uuid.UUID, status string) error
+	SetStatus(ctx context.Context, strategy retry.Strategy, id uuid.UUID, status string) error
 }
 
 type Handler struct {
@@ -56,13 +56,22 @@ func (h *Handler) Create(c *ginext.Context) {
 		return
 	}
 
-	notif := model.Notification{
-		Message: req.Message,
-		SendAt:  req.SendAt,
-		Retries: req.Retries,
+	loc, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		zlog.Logger.Fatal().Err(err).Msg("failed to load Moscow timezone")
 	}
 
-	id, err := h.service.CreateNotification(c, h.cfg.Retry, notif)
+	parsedTime, err := time.ParseInLocation(time.DateTime, req.SendAt, loc)
+	notif := model.Notification{
+		Message: req.Message,
+		SendAt:  parsedTime,
+		Status:  "pending",
+		Retries: req.Retries,
+		To:      req.To,
+		Channel: req.Channel,
+	}
+
+	id, err := h.service.CreateNotification(c.Request.Context(), h.cfg.Retry, notif)
 	if err != nil {
 		zlog.Logger.Error().Err(err).Interface("message", notif.Message).Msg("failed to create notification")
 		respond.Fail(c.Writer, http.StatusInternalServerError, fmt.Errorf("internal server error"))
@@ -73,7 +82,7 @@ func (h *Handler) Create(c *ginext.Context) {
 }
 
 func (h *Handler) GetStatus(c *ginext.Context) {
-	idStr := chi.URLParam(c.Request, "id")
+	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		zlog.Logger.Error().Err(err).Interface("idStr", idStr).Msg("failed to parse id")
@@ -87,7 +96,7 @@ func (h *Handler) GetStatus(c *ginext.Context) {
 		return
 	}
 
-	status, err := h.service.GetNotificationStatusByID(c, h.cfg.Retry, id)
+	status, err := h.service.GetNotificationStatusByID(c.Request.Context(), h.cfg.Retry, id)
 	if err != nil {
 		if errors.Is(err, notification.ErrNotificationNotFound) {
 			zlog.Logger.Warn().Interface("id", id).Err(err).Msg("notification not found")
@@ -103,7 +112,7 @@ func (h *Handler) GetStatus(c *ginext.Context) {
 }
 
 func (h *Handler) Cancel(c *ginext.Context) {
-	idStr := chi.URLParam(c.Request, "id")
+	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		zlog.Logger.Error().Err(err).Interface("idStr", idStr).Msg("failed to parse id")
@@ -117,7 +126,7 @@ func (h *Handler) Cancel(c *ginext.Context) {
 		return
 	}
 
-	err = h.service.SetStatus(c, id, "cancelled")
+	err = h.service.SetStatus(c.Request.Context(), h.cfg.Retry, id, "cancelled")
 	if err != nil {
 		if errors.Is(err, notification.ErrNotificationNotFound) {
 			zlog.Logger.Warn().Interface("id", id).Err(err).Msg("notification not found")

@@ -2,18 +2,19 @@ package notification
 
 import (
 	"context"
-	"time"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/wb-go/wbf/retry"
 	"github.com/wb-go/wbf/zlog"
 
 	"github.com/aliskhannn/delayed-notifier/internal/rabbitmq/queue"
+	"github.com/aliskhannn/delayed-notifier/internal/repository/notification"
 )
 
 type notifService interface {
 	Send(to, message, channel string) error
-	SetStatus(ctx context.Context, id uuid.UUID, status string) error
+	SetStatus(ctx context.Context, strategy retry.Strategy, id uuid.UUID, status string) error
 }
 
 type Handler struct {
@@ -28,31 +29,36 @@ func NewHandler(svc notifService) *Handler {
 }
 
 func (h *Handler) HandleMessage(ctx context.Context, msg queue.NotificationMessage, strategy retry.Strategy) {
-	delay := time.Until(msg.SendAt)
-	if delay > 0 {
-		time.Sleep(delay)
+	zlog.Logger.Info().Msgf("Handle Message: Got notification %s, will be sent at %v", msg.ID, msg.SendAt)
+
+	err := retry.Do(func() error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			zlog.Logger.Printf("Handle Message: Sending notification %s via %s", msg.ID, msg.Channel)
+			return h.service.Send(msg.To, msg.Message, msg.Channel)
+		}
+	}, strategy)
+
+	if err != nil {
+		zlog.Logger.Printf("Handle Message: Notification %s failed, moving to DLQ: %v", msg.ID, err)
+		if setErr := h.service.SetStatus(ctx, strategy, msg.ID, "failed"); setErr != nil {
+			if errors.Is(setErr, notification.ErrNotificationNotFound) {
+				zlog.Logger.Warn().Interface("id", msg.ID).Err(err).Msg("notification not found")
+			}
+
+			zlog.Logger.Error().Err(setErr).Msgf("failed to set status=failed for %s", msg.ID)
+		}
+		return
 	}
 
-	attempt := 0
-	currentDelay := strategy.Delay
-
-	for attempt < strategy.Attempts {
-		err := h.service.Send(msg.To, msg.Message, msg.Channel)
-		if err == nil {
-			zlog.Logger.Printf("notification %s sent", msg.ID)
-			_ = h.service.SetStatus(ctx, msg.ID, "sent")
-			return
+	zlog.Logger.Info().Msgf("Handle Message: Notification %s sent successfully", msg.ID)
+	if setErr := h.service.SetStatus(ctx, strategy, msg.ID, "sent"); setErr != nil {
+		if errors.Is(setErr, notification.ErrNotificationNotFound) {
+			zlog.Logger.Warn().Interface("id", msg.ID).Err(err).Msg("notification not found")
 		}
 
-		attempt++
-		zlog.Logger.Printf("failed to send notification %s: %v, retry %d/%d",
-			msg.ID, err, attempt, strategy.Attempts,
-		)
-
-		time.Sleep(currentDelay)
-		currentDelay = time.Duration(float64(currentDelay) * strategy.Backoff)
+		zlog.Logger.Error().Err(setErr).Msgf("failed to set status=sent for %s", msg.ID)
 	}
-
-	zlog.Logger.Printf("Notification %s failed after %d attempts, moving to DLQ", msg.ID, attempt)
-	_ = h.service.SetStatus(ctx, msg.ID, "failed")
 }

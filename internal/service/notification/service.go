@@ -107,10 +107,15 @@ func (s *Service) Send(to, message, channel string) error {
 	return nil
 }
 
-func (s *Service) SetStatus(ctx context.Context, id uuid.UUID, status string) error {
+func (s *Service) SetStatus(ctx context.Context, strategy retry.Strategy, id uuid.UUID, status string) error {
 	err := s.repo.UpdateStatus(ctx, id, status)
 	if err != nil {
 		return fmt.Errorf("update notification status: %w", err)
+	}
+
+	err = s.cache.SetWithRetry(ctx, strategy, id.String(), status)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Str("id", id.String()).Msg("failed to cache notification")
 	}
 
 	return nil

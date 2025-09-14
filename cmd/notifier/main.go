@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os/signal"
+	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/wb-go/wbf/dbpg"
@@ -12,6 +15,7 @@ import (
 	"github.com/wb-go/wbf/zlog"
 
 	"github.com/aliskhannn/delayed-notifier/internal/api/handlers/notification"
+	"github.com/aliskhannn/delayed-notifier/internal/api/router"
 	"github.com/aliskhannn/delayed-notifier/internal/api/server"
 	"github.com/aliskhannn/delayed-notifier/internal/config"
 	notifmsg "github.com/aliskhannn/delayed-notifier/internal/rabbitmq/handlers/notification"
@@ -27,22 +31,21 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	zlog.Init()
 	cfg := config.Must()
 	val := validator.New()
 
-	conn, err := rabbitmq.Connect("amqp://guest:guest@rabbitmq:5672", 3, 1)
+	conn, err := rabbitmq.Connect(cfg.RabbitMQ.URL(), cfg.RabbitMQ.Retries, cfg.RabbitMQ.Pause)
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to connect to rabbitmq")
 	}
-	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to open channel")
 	}
-	defer ch.Close()
 
-	q, err := queue.NewNotificationQueue(ch)
+	q, err := queue.NewNotificationQueue(ch, cfg)
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to create notification queue")
 	}
@@ -63,18 +66,28 @@ func main() {
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to connect to database")
 	}
-	defer db.Master.Close()
 
 	repo := notifrepo.NewRepository(db)
-	rdb := redis.New(cfg.Redis.Address, cfg.Redis.Password, cfg.Redis.Database)
 
-	if err := rdb.Ping(ctx).Err(); err != nil {
+	dbNum, err := strconv.Atoi(cfg.Redis.Database)
+	if err != nil {
+		zlog.Logger.Fatal().Err(err).Msg("failed to parse redis database")
+	}
+
+	rdb := redis.New(cfg.Redis.Address, cfg.Redis.Password, dbNum)
+
+	if err = rdb.Ping(ctx).Err(); err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to connect to redis")
+	}
+
+	smtpPort, err := strconv.Atoi(cfg.Email.SMTPPort)
+	if err != nil {
+		zlog.Logger.Fatal().Err(err).Msg("failed to parse email smtp port")
 	}
 
 	emailClient := email.NewClient(
 		cfg.Email.SMTPHost,
-		cfg.Email.SMTPPort,
+		smtpPort,
 		cfg.Email.Username,
 		cfg.Email.Password,
 		cfg.Email.From,
@@ -94,8 +107,49 @@ func main() {
 
 	go notifier.Run(ctx, cfg.Retry, cfg.Workers.Count)
 
-	s := server.New(notifHandler)
-	if err := s.Run(cfg.Server.HTTPPort); err != nil {
-		zlog.Logger.Fatal().Err(err).Msg("failed to start server")
+	r := router.New(notifHandler)
+	s := server.New(cfg.Server.HTTPPort, r)
+
+	go func() {
+		if err := s.ListenAndServe(); err != nil {
+			zlog.Logger.Fatal().Err(err).Msg("failed to start server")
+		}
+	}()
+
+	<-ctx.Done()
+	zlog.Logger.Info().Msg("shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	zlog.Logger.Info().Msg("shutting down server")
+	if err := s.Shutdown(shutdownCtx); err != nil {
+		zlog.Logger.Error().Err(err).Msg("failed to shutdown server")
+	}
+
+	if errors.Is(shutdownCtx.Err(), context.DeadlineExceeded) {
+		zlog.Logger.Info().Msg("timeout exceeded, forcing shutdown")
+	}
+
+	// закрываем мастер
+	if err := db.Master.Close(); err != nil {
+		zlog.Logger.Printf("failed to close master DB: %v", err)
+	}
+
+	// закрываем слейвы
+	for i, s := range db.Slaves {
+		if err := s.Close(); err != nil {
+			zlog.Logger.Printf("failed to close slave DB %d: %v", i, err)
+		}
+	}
+
+	// закрываем канал
+	if err := ch.Close(); err != nil {
+		zlog.Logger.Error().Err(err).Msg("failed to close RabbitMQ channel")
+	}
+
+	// закрываем соединение
+	if err := conn.Close(); err != nil {
+		zlog.Logger.Error().Err(err).Msg("failed to close RabbitMQ connection")
 	}
 }

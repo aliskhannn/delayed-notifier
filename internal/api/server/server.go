@@ -1,21 +1,14 @@
 package server
 
 import (
-	"github.com/wb-go/wbf/ginext"
+	"net/http"
 
-	"github.com/aliskhannn/delayed-notifier/internal/api/handlers/notification"
+	"github.com/wb-go/wbf/ginext"
 )
 
-func New(handler *notification.Handler) *ginext.Engine {
-	e := ginext.New()
-	e.Use(ginext.Logger())
-	e.Use(ginext.Recovery())
-
-	api := e.Group("/api/notify")
-
-	api.POST("/", handler.Create)
-	api.GET("/:id", handler.GetStatus)
-	api.DELETE("/:id", handler.Cancel)
-
-	return e
+func New(addr string, router *ginext.Engine) *http.Server {
+	return &http.Server{
+		Addr:    addr,
+		Handler: router,
+	}
 }

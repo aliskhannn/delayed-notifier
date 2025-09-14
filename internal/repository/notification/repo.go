@@ -24,13 +24,13 @@ func NewRepository(db *dbpg.DB) *Repository {
 func (r *Repository) CreateNotification(ctx context.Context, notification model.Notification) (uuid.UUID, error) {
 	query := `
 		INSERT INTO notifications (
-		    message, send_at, retries
-		) VALUES ($1, $2, $3)
+		    message, send_at, retries, "to", channel
+		) VALUES ($1, $2, $3, $4, $5)
 		RETURNING id;
     `
 
 	err := r.db.Master.QueryRowContext(
-		ctx, query, notification.Message, notification.SendAt, notification.Retries,
+		ctx, query, notification.Message, notification.SendAt, notification.Retries, notification.To, notification.Channel,
 	).Scan(&notification.ID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create notification: %w", err)

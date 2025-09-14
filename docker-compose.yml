@@ -10,6 +10,8 @@ services:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
     environment:
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
@@ -67,28 +69,40 @@ services:
       - app-network
 
   rabbitmq:
-    image: rabbitmq:latest
+    build:
+      context: .
+      dockerfile: rabbitmq.dockerfile
     container_name: rabbitmq
     restart: always
+    hostname: "rabbit"
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq-lib:/var/lib/rabbitmq/
       - rabbitmq-log:/var/log/rabbitmq/
+    networks:
+      - app-network
 
   redis:
     image: redis:latest
     container_name: redis
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
     networks:
       - app-network
-
 
 volumes:
   postgres_data:
