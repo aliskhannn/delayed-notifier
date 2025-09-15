@@ -1,6 +1,19 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+    container_name: notifier_frontend
+    ports:
+      - "3000:80"   # http://localhost:3000
+    environment:
+      - VITE_API_URL=http://notifier:8080
+    depends_on:
+      - notifier
+    networks:
+      - app-network
+
   notifier:
-    build: .
+    build: ./backend
     command: ./notifier
     container_name: notifier
     ports:
@@ -42,7 +55,7 @@ services:
       timeout: 3s
       retries: 1
     volumes:
-      - ./migrations:/migrations
+      - ./backend/migrations:/migrations
     networks:
       - app-network
 
@@ -71,7 +84,7 @@ services:
   rabbitmq:
     build:
       context: .
-      dockerfile: rabbitmq.dockerfile
+      dockerfile: ./backend/rabbitmq.dockerfile
     container_name: rabbitmq
     restart: always
     hostname: "rabbit"
