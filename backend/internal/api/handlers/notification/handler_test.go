@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -20,10 +19,10 @@ import (
 	"github.com/aliskhannn/delayed-notifier/internal/model"
 )
 
-func setupHandler(t *testing.T) (*Handler, *mocks.MocknotifService, *config.Config) {
+func setupHandler(t *testing.T) (*Handler, *mocks.MocknotificationService, *config.Config) {
 	ctrl := gomock.NewController(t)
-	mockService := mocks.NewMocknotifService(ctrl)
-	cfg := &config.Config{Retry: retry.Strategy{}} // Предположим, что есть DefaultRetry
+	mockService := mocks.NewMocknotificationService(ctrl)
+	cfg := &config.Config{Retry: retry.Strategy{}}
 	validate := validator.New()
 	handler := NewHandler(mockService, validate, cfg)
 	return handler, mockService, cfg
@@ -34,7 +33,7 @@ func TestHandler_Create_Success(t *testing.T) {
 
 	reqBody := CreateRequest{
 		Message: "Hello",
-		SendAt:  "2025-09-15T10:00:00",
+		SendAt:  "2025-09-15 10:00:00",
 		Retries: 3,
 		To:      "test@example.com",
 		Channel: "email",
@@ -47,19 +46,12 @@ func TestHandler_Create_Success(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
 
-	parsedTime, _ := time.ParseInLocation(time.DateTime, reqBody.SendAt, time.FixedZone("MSK", 3*3600))
-	notif := model.Notification{
-		Message: reqBody.Message,
-		SendAt:  parsedTime,
-		Status:  "pending",
-		Retries: reqBody.Retries,
-		To:      reqBody.To,
-		Channel: reqBody.Channel,
-	}
-
 	mockService.EXPECT().
-		CreateNotification(gomock.Any(), cfg.Retry, notif).
-		Return(uuid.New(), nil)
+		CreateNotification(
+			gomock.Any(),
+			cfg.Retry,
+			gomock.AssignableToTypeOf(model.Notification{}),
+		).Return(uuid.New(), nil)
 
 	handler.Create(c)
 

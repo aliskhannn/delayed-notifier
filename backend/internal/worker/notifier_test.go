@@ -80,11 +80,7 @@ func TestNotifier_Run_CancelledStatus(t *testing.T) {
 		},
 	)
 
-	// Вернем "cancelled"
 	mockService.EXPECT().GetNotificationStatusByID(gomock.Any(), strategy, msg.ID).Return("cancelled", nil)
-
-	// HandleMessage НЕ должен вызываться
-	// (gomock.Strict контролирует это)
 
 	go n.Run(ctx, strategy, 1)
 	time.Sleep(50 * time.Millisecond)
@@ -115,11 +111,7 @@ func TestNotifier_Run_GetStatusError(t *testing.T) {
 		},
 	)
 
-	// Вернем ошибку
 	mockService.EXPECT().GetNotificationStatusByID(gomock.Any(), strategy, msg.ID).Return("", errors.New("db error"))
-
-	// HandleMessage НЕ должен вызываться
-	// (gomock.Strict это проверит)
 
 	go n.Run(ctx, strategy, 1)
 	time.Sleep(50 * time.Millisecond)
@@ -141,7 +133,6 @@ func TestNotifier_Run_ContextCancelled(t *testing.T) {
 
 	strategy := retry.Strategy{Attempts: 1, Delay: time.Millisecond}
 
-	// Consumer будет просто ждать до отмены
 	mockConsumer.EXPECT().Consume(gomock.Any(), gomock.Any(), strategy).DoAndReturn(
 		func(ctx context.Context, out chan<- queue.NotificationMessage, _ retry.Strategy) error {
 			<-ctx.Done()
@@ -151,10 +142,8 @@ func TestNotifier_Run_ContextCancelled(t *testing.T) {
 
 	go n.Run(ctx, strategy, 1)
 
-	// Завершаем контекст
 	cancel()
 
-	// Ждём чтобы убедиться, что Run завершился без паники
 	require.Eventually(t, func() bool { return true }, time.Second, 50*time.Millisecond)
 	assert.True(t, true, "notifier stopped cleanly")
 }

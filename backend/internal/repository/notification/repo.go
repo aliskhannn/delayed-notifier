@@ -17,14 +17,17 @@ var (
 	ErrNoNotificationsFound = errors.New("no notifications found")
 )
 
+// Repository provides methods to interact with notifications table.
 type Repository struct {
 	db *dbpg.DB
 }
 
+// NewRepository creates a new notification repository.
 func NewRepository(db *dbpg.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// CreateNotification inserts a new notification into the database and returns its ID.
 func (r *Repository) CreateNotification(ctx context.Context, notification model.Notification) (uuid.UUID, error) {
 	query := `
 		INSERT INTO notifications (
@@ -44,6 +47,7 @@ func (r *Repository) CreateNotification(ctx context.Context, notification model.
 	return notification.ID, nil
 }
 
+// UpdateStatus updates the status of a notification by its ID.
 func (r *Repository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
 	query := `
 		UPDATE notifications
@@ -65,6 +69,7 @@ func (r *Repository) UpdateStatus(ctx context.Context, id uuid.UUID, status stri
 	return nil
 }
 
+// GetNotificationStatusByID retrieves the status of a notification by its ID.
 func (r *Repository) GetNotificationStatusByID(ctx context.Context, id uuid.UUID) (string, error) {
 	query := `
 		SELECT message, send_at, "to", channel, status
@@ -86,6 +91,7 @@ func (r *Repository) GetNotificationStatusByID(ctx context.Context, id uuid.UUID
 	return status, nil
 }
 
+// GetAllNotifications retrieves all notifications ordered by SendAt descending.
 func (r *Repository) GetAllNotifications(ctx context.Context) ([]model.Notification, error) {
 	query := `
 		SELECT id, message, send_at, retries, "to", channel, status

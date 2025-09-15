@@ -14,31 +14,31 @@ import (
 	retry "github.com/wb-go/wbf/retry"
 )
 
-// MocknotifService is a mock of notifService interface.
-type MocknotifService struct {
+// MocknotificationService is a mock of notificationService interface.
+type MocknotificationService struct {
 	ctrl     *gomock.Controller
-	recorder *MocknotifServiceMockRecorder
+	recorder *MocknotificationServiceMockRecorder
 }
 
-// MocknotifServiceMockRecorder is the mock recorder for MocknotifService.
-type MocknotifServiceMockRecorder struct {
-	mock *MocknotifService
+// MocknotificationServiceMockRecorder is the mock recorder for MocknotificationService.
+type MocknotificationServiceMockRecorder struct {
+	mock *MocknotificationService
 }
 
-// NewMocknotifService creates a new mock instance.
-func NewMocknotifService(ctrl *gomock.Controller) *MocknotifService {
-	mock := &MocknotifService{ctrl: ctrl}
-	mock.recorder = &MocknotifServiceMockRecorder{mock}
+// NewMocknotificationService creates a new mock instance.
+func NewMocknotificationService(ctrl *gomock.Controller) *MocknotificationService {
+	mock := &MocknotificationService{ctrl: ctrl}
+	mock.recorder = &MocknotificationServiceMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MocknotifService) EXPECT() *MocknotifServiceMockRecorder {
+func (m *MocknotificationService) EXPECT() *MocknotificationServiceMockRecorder {
 	return m.recorder
 }
 
 // CreateNotification mocks base method.
-func (m *MocknotifService) CreateNotification(arg0 context.Context, arg1 retry.Strategy, arg2 model.Notification) (uuid.UUID, error) {
+func (m *MocknotificationService) CreateNotification(arg0 context.Context, arg1 retry.Strategy, arg2 model.Notification) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNotification", arg0, arg1, arg2)
 	ret0, _ := ret[0].(uuid.UUID)
@@ -47,13 +47,13 @@ func (m *MocknotifService) CreateNotification(arg0 context.Context, arg1 retry.S
 }
 
 // CreateNotification indicates an expected call of CreateNotification.
-func (mr *MocknotifServiceMockRecorder) CreateNotification(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MocknotificationServiceMockRecorder) CreateNotification(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNotification", reflect.TypeOf((*MocknotifService)(nil).CreateNotification), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNotification", reflect.TypeOf((*MocknotificationService)(nil).CreateNotification), arg0, arg1, arg2)
 }
 
 // GetAllNotifications mocks base method.
-func (m *MocknotifService) GetAllNotifications(arg0 context.Context) ([]model.Notification, error) {
+func (m *MocknotificationService) GetAllNotifications(arg0 context.Context) ([]model.Notification, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllNotifications", arg0)
 	ret0, _ := ret[0].([]model.Notification)
@@ -62,13 +62,13 @@ func (m *MocknotifService) GetAllNotifications(arg0 context.Context) ([]model.No
 }
 
 // GetAllNotifications indicates an expected call of GetAllNotifications.
-func (mr *MocknotifServiceMockRecorder) GetAllNotifications(arg0 interface{}) *gomock.Call {
+func (mr *MocknotificationServiceMockRecorder) GetAllNotifications(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNotifications", reflect.TypeOf((*MocknotifService)(nil).GetAllNotifications), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNotifications", reflect.TypeOf((*MocknotificationService)(nil).GetAllNotifications), arg0)
 }
 
 // GetNotificationStatusByID mocks base method.
-func (m *MocknotifService) GetNotificationStatusByID(arg0 context.Context, arg1 retry.Strategy, arg2 uuid.UUID) (string, error) {
+func (m *MocknotificationService) GetNotificationStatusByID(arg0 context.Context, arg1 retry.Strategy, arg2 uuid.UUID) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNotificationStatusByID", arg0, arg1, arg2)
 	ret0, _ := ret[0].(string)
@@ -77,13 +77,13 @@ func (m *MocknotifService) GetNotificationStatusByID(arg0 context.Context, arg1 
 }
 
 // GetNotificationStatusByID indicates an expected call of GetNotificationStatusByID.
-func (mr *MocknotifServiceMockRecorder) GetNotificationStatusByID(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MocknotificationServiceMockRecorder) GetNotificationStatusByID(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotificationStatusByID", reflect.TypeOf((*MocknotifService)(nil).GetNotificationStatusByID), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotificationStatusByID", reflect.TypeOf((*MocknotificationService)(nil).GetNotificationStatusByID), arg0, arg1, arg2)
 }
 
 // SetStatus mocks base method.
-func (m *MocknotifService) SetStatus(ctx context.Context, strategy retry.Strategy, id uuid.UUID, status string) error {
+func (m *MocknotificationService) SetStatus(ctx context.Context, strategy retry.Strategy, id uuid.UUID, status string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetStatus", ctx, strategy, id, status)
 	ret0, _ := ret[0].(error)
@@ -91,7 +91,7 @@ func (m *MocknotifService) SetStatus(ctx context.Context, strategy retry.Strateg
 }
 
 // SetStatus indicates an expected call of SetStatus.
-func (mr *MocknotifServiceMockRecorder) SetStatus(ctx, strategy, id, status interface{}) *gomock.Call {
+func (mr *MocknotificationServiceMockRecorder) SetStatus(ctx, strategy, id, status interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStatus", reflect.TypeOf((*MocknotifService)(nil).SetStatus), ctx, strategy, id, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStatus", reflect.TypeOf((*MocknotificationService)(nil).SetStatus), ctx, strategy, id, status)
 }

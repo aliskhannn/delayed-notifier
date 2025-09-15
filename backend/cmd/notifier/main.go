@@ -1,3 +1,8 @@
+// Package main initializes and runs the delayed-notifier service.
+//
+// It sets up connections to RabbitMQ, PostgreSQL, and Redis, configures
+// email and telegram notifiers, starts the HTTP server, and launches
+// background workers to process notifications from the queue.
 package main
 
 import (
@@ -28,13 +33,16 @@ import (
 )
 
 func main() {
+	// Setup context to handle SIGINT and SIGTERM for graceful shutdown.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// Initialize logger and configuration.
 	zlog.Init()
 	cfg := config.Must()
 	val := validator.New()
 
+	// Connect to RabbitMQ.
 	conn, err := rabbitmq.Connect(cfg.RabbitMQ.URL(), cfg.RabbitMQ.Retries, cfg.RabbitMQ.Pause)
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to connect to rabbitmq")
@@ -45,11 +53,13 @@ func main() {
 		zlog.Logger.Fatal().Err(err).Msg("failed to open channel")
 	}
 
+	// Create notification queue.
 	q, err := queue.NewNotificationQueue(ch, cfg)
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to create notification queue")
 	}
 
+	// Connect to PostgreSQL master and slave databases.
 	opts := &dbpg.Options{
 		MaxOpenConns:    cfg.Database.MaxOpenConns,
 		MaxIdleConns:    cfg.Database.MaxIdleConns,
@@ -67,8 +77,7 @@ func main() {
 		zlog.Logger.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
-	repo := notifrepo.NewRepository(db)
-
+	// Connect to Redis
 	dbNum, err := strconv.Atoi(cfg.Redis.Database)
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to parse redis database")
@@ -81,6 +90,7 @@ func main() {
 		zlog.Logger.Fatal().Err(err).Msg("failed to connect to redis")
 	}
 
+	// Initialize email and telegram clients.
 	smtpPort, err := strconv.Atoi(cfg.Email.SMTPPort)
 	if err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("failed to parse email smtp port")
@@ -100,26 +110,30 @@ func main() {
 		"telegram": telegramClient,
 	}
 
+	// Initialize notification repository, service and handlers.
+	repo := notifrepo.NewRepository(db)
 	service := notifsvc.NewService(repo, q, notifiers, rdb)
 	notifHandler := notification.NewHandler(service, val, cfg)
 	messageHandler := notifmsg.NewHandler(service)
 
+	// Start background notifier worker.
 	notifier := worker.NewNotifier(q, messageHandler, service)
-
 	go notifier.Run(ctx, cfg.Retry, cfg.Workers.Count)
 
+	// Start HTTP server
 	r := router.New(notifHandler)
 	s := server.New(cfg.Server.HTTPPort, r)
-
 	go func() {
 		if err := s.ListenAndServe(); err != nil {
 			zlog.Logger.Fatal().Err(err).Msg("failed to start server")
 		}
 	}()
 
+	// Wait for shutdown signal.
 	<-ctx.Done()
 	zlog.Logger.Info().Msg("shutdown signal received")
 
+	// Graceful shutdown with timeout.
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -127,29 +141,24 @@ func main() {
 	if err := s.Shutdown(shutdownCtx); err != nil {
 		zlog.Logger.Error().Err(err).Msg("failed to shutdown server")
 	}
-
 	if errors.Is(shutdownCtx.Err(), context.DeadlineExceeded) {
 		zlog.Logger.Info().Msg("timeout exceeded, forcing shutdown")
 	}
 
-	// закрываем мастер
+	// Close master and slave databases.
 	if err := db.Master.Close(); err != nil {
 		zlog.Logger.Printf("failed to close master DB: %v", err)
 	}
-
-	// закрываем слейвы
 	for i, s := range db.Slaves {
 		if err := s.Close(); err != nil {
 			zlog.Logger.Printf("failed to close slave DB %d: %v", i, err)
 		}
 	}
 
-	// закрываем канал
+	// Close RabbitMQ channel and connection
 	if err := ch.Close(); err != nil {
 		zlog.Logger.Error().Err(err).Msg("failed to close RabbitMQ channel")
 	}
-
-	// закрываем соединение
 	if err := conn.Close(); err != nil {
 		zlog.Logger.Error().Err(err).Msg("failed to close RabbitMQ connection")
 	}

@@ -12,30 +12,40 @@ import (
 	"github.com/aliskhannn/delayed-notifier/internal/repository/notification"
 )
 
-//go:generate mockgen -source=handler.go -destination=../../../mocks/rabbitmq/handlers/notification/mock.go -package=mocks
+// notificationService defines the interface for sending notifications
+// and updating their status.
 type notificationService interface {
 	Send(to, message, channel string) error
 	SetStatus(ctx context.Context, strategy retry.Strategy, id uuid.UUID, status string) error
 }
 
+// Handler handles notifications from RabbitMQ and manages their lifecycle.
 type Handler struct {
 	service notificationService
 }
 
+// NewHandler creates a new Handler with the given notification service.
 func NewHandler(svc notificationService) *Handler {
 	return &Handler{
 		service: svc,
 	}
 }
 
+// HandleMessage processes a single notification message.
+//
+// It attempts to send the notification using the service. If sending fails,
+// it marks the notification as "failed". If successful, it marks it as "sent".
 func (h *Handler) HandleMessage(ctx context.Context, msg queue.NotificationMessage, strategy retry.Strategy) {
 	zlog.Logger.Info().Msgf("Handle Message: Got notification %s, will be sent at %v", msg.ID, msg.SendAt)
 
+	// Attempt to send the notification with retry strategy.
 	err := retry.Do(func() error {
 		select {
 		case <-ctx.Done():
+			// Stop if the context is canceled.
 			return ctx.Err()
 		default:
+			// Send the notification
 			zlog.Logger.Printf("Handle Message: Sending notification %s via %s", msg.ID, msg.Channel)
 			return h.service.Send(msg.To, msg.Message, msg.Channel)
 		}

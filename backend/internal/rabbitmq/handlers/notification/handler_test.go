@@ -32,7 +32,6 @@ func TestHandler_HandleMessage_Success(t *testing.T) {
 
 	strategy := retry.Strategy{Attempts: 1, Delay: time.Millisecond}
 
-	// Ожидаем вызов Send и SetStatus("sent")
 	mockService.EXPECT().
 		Send(msg.To, msg.Message, msg.Channel).
 		Return(nil)
@@ -61,7 +60,6 @@ func TestHandler_HandleMessage_SendFailsThenSetFailed(t *testing.T) {
 	strategy := retry.Strategy{Attempts: 1, Delay: time.Millisecond}
 	sendErr := errors.New("send error")
 
-	// Send возвращает ошибку, затем ожидаем SetStatus("failed")
 	mockService.EXPECT().
 		Send(msg.To, msg.Message, msg.Channel).
 		Return(sendErr)
@@ -90,7 +88,6 @@ func TestHandler_HandleMessage_SendFailsThenSetFailedNotFound(t *testing.T) {
 	strategy := retry.Strategy{Attempts: 1, Delay: time.Millisecond}
 	sendErr := errors.New("send error")
 
-	// Send возвращает ошибку, SetStatus возвращает ErrNotificationNotFound
 	mockService.EXPECT().
 		Send(msg.To, msg.Message, msg.Channel).
 		Return(sendErr)
@@ -118,7 +115,6 @@ func TestHandler_HandleMessage_SetStatusSentFails(t *testing.T) {
 
 	strategy := retry.Strategy{Attempts: 1, Delay: time.Millisecond}
 
-	// Send успешен, но SetStatus("sent") возвращает ошибку
 	mockService.EXPECT().
 		Send(msg.To, msg.Message, msg.Channel).
 		Return(nil)
@@ -146,9 +142,8 @@ func TestHandler_HandleMessage_ContextCanceled(t *testing.T) {
 
 	strategy := retry.Strategy{Attempts: 1, Delay: time.Millisecond}
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // контекст уже отменён
+	cancel()
 
-	// Ожидаем вызов SetStatus("failed"), Send не будет вызван
 	mockService.EXPECT().
 		SetStatus(ctx, strategy, msg.ID, "failed").
 		Return(nil)

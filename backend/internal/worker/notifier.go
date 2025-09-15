@@ -11,26 +11,29 @@ import (
 	"github.com/aliskhannn/delayed-notifier/internal/rabbitmq/queue"
 )
 
-//go:generate mockgen -source=notifier.go -destination=../mocks/worker/mock.go -package=mocks
-
+// notificationConsumer defines an interface for consuming notification messages from a queue.
 type notificationConsumer interface {
 	Consume(ctx context.Context, out chan<- queue.NotificationMessage, strategy retry.Strategy) error
 }
 
+// messageHandler defines an interface for handling notification messages.
 type messageHandler interface {
 	HandleMessage(ctx context.Context, msg queue.NotificationMessage, strategy retry.Strategy)
 }
 
+// notificationService defines an interface for fetching notification status.
 type notificationService interface {
 	GetNotificationStatusByID(context.Context, retry.Strategy, uuid.UUID) (string, error)
 }
 
+// Notifier consumes messages from a queue and delegates handling to a messageHandler.
 type Notifier struct {
 	queue   notificationConsumer
 	handler messageHandler
 	service notificationService
 }
 
+// NewNotifier creates a new Notifier instance.
 func NewNotifier(q notificationConsumer, h messageHandler, s notificationService) *Notifier {
 	return &Notifier{
 		queue:   q,
@@ -39,10 +42,18 @@ func NewNotifier(q notificationConsumer, h messageHandler, s notificationService
 	}
 }
 
+// Run starts the Notifier workers to process messages from the queue.
+//
+// It starts a consumer goroutine to read messages into a buffered channel.
+// Then it starts workerCount goroutines that read messages from the channel,
+// check the notification status, and pass valid messages to the handler.
+//
+// Messages with status "cancelled" are skipped.
 func (n *Notifier) Run(ctx context.Context, strategy retry.Strategy, workerCount int) {
 	var wg sync.WaitGroup
 	msgChan := make(chan queue.NotificationMessage, workerCount*10)
 
+	// Start consuming messages from the queue.
 	go func() {
 		if err := n.queue.Consume(ctx, msgChan, strategy); err != nil {
 			zlog.Logger.Error().Err(err).Msg("failed to consume messages")
@@ -81,13 +92,13 @@ func (n *Notifier) Run(ctx context.Context, strategy retry.Strategy, workerCount
 						continue
 					}
 
-					n.handler.HandleMessage(ctx, msg, strategy)
+					n.handler.HandleMessage(ctx, msg, strategy) // process the message
 				}
 			}
 		}(i)
 	}
 
-	<-ctx.Done()
-	wg.Wait()
+	<-ctx.Done() // wait for shutdown signal
+	wg.Wait()    // wait for all workers to finish
 	zlog.Logger.Print("notifier stopped")
 }
