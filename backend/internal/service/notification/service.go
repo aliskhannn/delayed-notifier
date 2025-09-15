@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
-	wbfredis "github.com/wb-go/wbf/redis"
 	"github.com/wb-go/wbf/retry"
 	"github.com/wb-go/wbf/zlog"
 
@@ -15,11 +14,13 @@ import (
 	"github.com/aliskhannn/delayed-notifier/internal/rabbitmq/queue"
 )
 
-type notifQueue interface {
+//go:generate mockgen -source=service.go -destination=../../mocks/service/notification/mock.go -package=mocks
+
+type notificationPublisher interface {
 	Publish(msg queue.NotificationMessage, strategy retry.Strategy) error
 }
 
-type notifRepo interface {
+type notificationRepository interface {
 	CreateNotification(context.Context, model.Notification) (uuid.UUID, error)
 	GetNotificationStatusByID(context.Context, uuid.UUID) (string, error)
 	UpdateStatus(context.Context, uuid.UUID, string) error
@@ -30,18 +31,23 @@ type Notifier interface {
 	Send(to string, msg string) error
 }
 
+type cache interface {
+	SetWithRetry(ctx context.Context, strategy retry.Strategy, key string, value interface{}) error
+	GetWithRetry(ctx context.Context, strategy retry.Strategy, key string) (string, error)
+}
+
 type Service struct {
-	repo      notifRepo
-	queue     notifQueue
+	repo      notificationRepository
+	queue     notificationPublisher
 	notifiers map[string]Notifier
-	cache     *wbfredis.Client
+	cache     cache
 }
 
 func NewService(
-	repo notifRepo,
-	queue notifQueue,
+	repo notificationRepository,
+	queue notificationPublisher,
 	notifiers map[string]Notifier,
-	cache *wbfredis.Client,
+	cache cache,
 ) *Service {
 	return &Service{repo: repo, queue: queue, notifiers: notifiers, cache: cache}
 }

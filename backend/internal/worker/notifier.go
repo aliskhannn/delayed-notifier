@@ -11,7 +11,9 @@ import (
 	"github.com/aliskhannn/delayed-notifier/internal/rabbitmq/queue"
 )
 
-type notifQueue interface {
+//go:generate mockgen -source=notifier.go -destination=../mocks/worker/mock.go -package=mocks
+
+type notificationConsumer interface {
 	Consume(ctx context.Context, out chan<- queue.NotificationMessage, strategy retry.Strategy) error
 }
 
@@ -19,17 +21,17 @@ type messageHandler interface {
 	HandleMessage(ctx context.Context, msg queue.NotificationMessage, strategy retry.Strategy)
 }
 
-type notifService interface {
+type notificationService interface {
 	GetNotificationStatusByID(context.Context, retry.Strategy, uuid.UUID) (string, error)
 }
 
 type Notifier struct {
-	queue   notifQueue
+	queue   notificationConsumer
 	handler messageHandler
-	service notifService
+	service notificationService
 }
 
-func NewNotifier(q notifQueue, h messageHandler, s notifService) *Notifier {
+func NewNotifier(q notificationConsumer, h messageHandler, s notificationService) *Notifier {
 	return &Notifier{
 		queue:   q,
 		handler: h,

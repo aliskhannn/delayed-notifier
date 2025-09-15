@@ -12,17 +12,17 @@ import (
 	"github.com/aliskhannn/delayed-notifier/internal/repository/notification"
 )
 
-type notifService interface {
+//go:generate mockgen -source=handler.go -destination=../../../mocks/rabbitmq/handlers/notification/mock.go -package=mocks
+type notificationService interface {
 	Send(to, message, channel string) error
 	SetStatus(ctx context.Context, strategy retry.Strategy, id uuid.UUID, status string) error
 }
 
 type Handler struct {
-	service notifService
-	queue   *queue.NotificationQueue
+	service notificationService
 }
 
-func NewHandler(svc notifService) *Handler {
+func NewHandler(svc notificationService) *Handler {
 	return &Handler{
 		service: svc,
 	}

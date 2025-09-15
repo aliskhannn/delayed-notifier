@@ -14,13 +14,13 @@ import (
 	"github.com/wb-go/wbf/retry"
 	"github.com/wb-go/wbf/zlog"
 
-	"github.com/aliskhannn/delayed-notifier/internal/api/dto"
 	"github.com/aliskhannn/delayed-notifier/internal/api/respond"
 	"github.com/aliskhannn/delayed-notifier/internal/config"
 	"github.com/aliskhannn/delayed-notifier/internal/model"
 	"github.com/aliskhannn/delayed-notifier/internal/repository/notification"
 )
 
+//go:generate mockgen -source=handler.go -destination=../../../mocks/api/handlers/notification/mock.go -package=mocks
 type notifService interface {
 	CreateNotification(context.Context, retry.Strategy, model.Notification) (uuid.UUID, error)
 	GetNotificationStatusByID(context.Context, retry.Strategy, uuid.UUID) (string, error)
@@ -42,8 +42,16 @@ func NewHandler(
 	return &Handler{service: s, validator: v, cfg: cfg}
 }
 
+type CreateRequest struct {
+	Message string `json:"message" validate:"required"`
+	SendAt  string `json:"send_at" validate:"required"`
+	Retries int    `json:"retries" validate:"required"`
+	To      string `json:"to" validate:"required"`
+	Channel string `json:"channel" validate:"required"`
+}
+
 func (h *Handler) Create(c *ginext.Context) {
-	var req dto.CreateRequest
+	var req CreateRequest
 
 	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		zlog.Logger.Error().Err(err).Msg("failed to decode request body")

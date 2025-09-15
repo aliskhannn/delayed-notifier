@@ -1,6 +1,10 @@
+# Run all backend tests with verbose output
+test:
+	cd backend && go test -v ./...
+
 # Run linters: vet + golangci-lint
 lint:
-	go vet ./... && golangci-lint run ./...
+	cd backend && go vet ./... && golangci-lint run ./...
 
 # Build and start all Docker services
 docker-up:

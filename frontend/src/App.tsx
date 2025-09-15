@@ -14,7 +14,7 @@ export default function App() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white p-6 rounded-2xl shadow">
             <NotificationForm />
           </div>
