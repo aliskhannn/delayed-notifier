@@ -21,16 +21,16 @@ It allows you to create notifications that should be delivered at a specific tim
 ```bash
 .
 ├── backend/                 # Backend service
-│   ├── cmd/                 # Application entry points (HTTP server, worker, etc.)
+│   ├── cmd/                 # Application entry points
 │   ├── config/              # Configuration files
 │   ├── internal/            # Internal application packages
-│   │   ├── api/             # HTTP handlers, routers, server
+│   │   ├── api/             # HTTP handlers, router, server
 │   │   ├── config/          # Config parsing logic
 │   │   ├── middlewares/     # HTTP middlewares
 │   │   ├── mocks/           # Generated mocks for testing
 │   │   ├── model/           # Data models
 │   │   ├── rabbitmq/        # RabbitMQ connection and consumers
-│   │   ├── repository/      # Database repositories (PostgreSQL, Redis)
+│   │   ├── repository/      # Database repositories
 │   │   ├── service/         # Business logic
 │   │   └── worker/          # Background workers for scheduled delivery
 │   ├── migrations/          # Database migrations
@@ -39,7 +39,7 @@ It allows you to create notifications that should be delivered at a specific tim
 │   ├── rabbitmq.dockerfile  # RabbitMQ Dockerfile with plugins
 │   ├── go.mod
 │   └── go.sum
-├── frontend/                # Frontend application (React/Vue or simple JS + HTML)
+├── frontend/                # Frontend application
 ├── plugins/                 # RabbitMQ plugins
 ├── .env.example             # Example environment variables
 ├── docker-compose.yml       # Multi-service Docker setup
