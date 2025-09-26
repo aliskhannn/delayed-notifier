@@ -24,8 +24,6 @@ import (
 //
 // It abstracts the business logic for creating, retrieving, updating,
 // and managing the status of notifications.
-//
-//go:generate mockgen -source=handler.go -destination=../../../mocks/api/handlers/notification/mock.go -package=mocks
 type notificationService interface {
 	CreateNotification(context.Context, retry.Strategy, model.Notification) (uuid.UUID, error)
 	GetNotificationStatusByID(context.Context, retry.Strategy, uuid.UUID) (string, error)

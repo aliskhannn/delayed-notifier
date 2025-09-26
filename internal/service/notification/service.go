@@ -56,6 +56,7 @@ func NewService(
 	return &Service{repo: repo, queue: queue, notifiers: notifiers, cache: cache}
 }
 
+
 // CreateNotification creates a new notification, caches its status, and publishes it to the queue.
 func (s *Service) CreateNotification(ctx context.Context, strategy retry.Strategy, notification model.Notification) (uuid.UUID, error) {
 	id, err := s.repo.CreateNotification(ctx, notification)
