@@ -11,7 +11,7 @@ require (
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.10.0
-	github.com/wb-go/wbf v0.0.4
+	github.com/wb-go/wbf v0.0.5
 	gopkg.in/mail.v2 v2.3.1
 )
 

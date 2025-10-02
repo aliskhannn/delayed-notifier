@@ -36,8 +36,7 @@ func (r *Repository) CreateNotification(ctx context.Context, notification model.
 		RETURNING id;
     `
 
-	// TODO: заменить на встроенный метод QueryRowContext с поддержкой master и slave с round-robin
-	err := r.db.Master.QueryRowContext(
+	err := r.db.QueryRowContext(
 		ctx, query, notification.Message, notification.SendAt, notification.Retries, notification.To, notification.Channel,
 	).Scan(&notification.ID)
 	if err != nil {
@@ -78,8 +77,7 @@ func (r *Repository) GetNotificationStatusByID(ctx context.Context, id uuid.UUID
     `
 
 	var status string
-	// TODO: заменить на встроенный метод QueryRowContext с поддержкой master и slave с round-robin
-	err := r.db.Master.QueryRowContext(ctx, query, id).Scan(&status)
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", ErrNotificationNotFound

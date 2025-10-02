@@ -134,6 +134,8 @@ github.com/ugorji/go/codec v1.3.0 h1:Qd2W2sQawAfG8XSvzwhBeoGq71zXOC/Q1E9y/wUcsUA
 github.com/ugorji/go/codec v1.3.0/go.mod h1:pRBVtBSKl77K30Bv8R2P+cLSGaTtex6fsA2Wjqmfxj4=
 github.com/wb-go/wbf v0.0.4 h1:+7WgjpImAvwabulllEe4FwojEiw5UFAiSaa3XH8ceVQ=
 github.com/wb-go/wbf v0.0.4/go.mod h1:2RXYh44okqUlbYQTzv0Xnmcmq+vxq1SuQRaarX9s1fo=
+github.com/wb-go/wbf v0.0.5 h1:PJnsb1tvXmdx7YKNIr9ocKEOGSPqgy2/n0GskuUHYnI=
+github.com/wb-go/wbf v0.0.5/go.mod h1:2RXYh44okqUlbYQTzv0Xnmcmq+vxq1SuQRaarX9s1fo=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
