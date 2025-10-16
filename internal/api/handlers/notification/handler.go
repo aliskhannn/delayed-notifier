@@ -167,13 +167,6 @@ func (h *Handler) GetAll(c *ginext.Context) {
 	// Fetch all notifications from the service layer.
 	notifications, err := h.service.GetAllNotifications(c.Request.Context())
 	if err != nil {
-		// Check if no notifications found and return 404.
-		if errors.Is(err, notification.ErrNotificationNotFound) {
-			zlog.Logger.Warn().Err(err).Msg("notification not found")
-			respond.Fail(c.Writer, http.StatusNotFound, fmt.Errorf("notification not found"))
-			return
-		}
-
 		// Log unexpected errors and return 500.
 		zlog.Logger.Error().Err(err).Msg("failed to get notifications")
 		respond.Fail(c.Writer, http.StatusInternalServerError, fmt.Errorf("internal server error"))

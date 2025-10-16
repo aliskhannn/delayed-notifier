@@ -14,7 +14,6 @@ import (
 
 var (
 	ErrNotificationNotFound = errors.New("notification not found")
-	ErrNoNotificationsFound = errors.New("no notifications found")
 )
 
 // Repository provides methods to interact with notifications table.
@@ -114,7 +113,7 @@ func (r *Repository) GetAllNotifications(ctx context.Context) ([]model.Notificat
 	}
 
 	if len(notifications) == 0 {
-		return nil, ErrNoNotificationsFound
+		return []model.Notification{}, nil
 	}
 
 	return notifications, nil
