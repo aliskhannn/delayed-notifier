@@ -112,9 +112,5 @@ func (r *Repository) GetAllNotifications(ctx context.Context) ([]model.Notificat
 		notifications = append(notifications, n)
 	}
 
-	if len(notifications) == 0 {
-		return []model.Notification{}, nil
-	}
-
 	return notifications, nil
 }
