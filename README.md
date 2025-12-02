@@ -18,32 +18,31 @@ It allows you to create notifications that should be delivered at a specific tim
 
 ## Project Structure
 
-```bash
+```
 .
-├── backend/                 # Backend service
-│   ├── cmd/                 # Application entry points
-│   ├── config/              # Configuration files
-│   ├── internal/            # Internal application packages
-│   │   ├── api/             # HTTP handlers, router, server
-│   │   ├── config/          # Config parsing logic
-│   │   ├── middlewares/     # HTTP middlewares
-│   │   ├── mocks/           # Generated mocks for testing
-│   │   ├── model/           # Data models
-│   │   ├── rabbitmq/        # RabbitMQ connection and consumers
-│   │   ├── repository/      # Database repositories
-│   │   ├── service/         # Business logic
-│   │   └── worker/          # Background workers for scheduled delivery
-│   ├── migrations/          # Database migrations
-│   ├── pkg/                 # External clients (Email, Telegram)
-│   ├── Dockerfile           # Backend Dockerfile
-│   ├── rabbitmq.dockerfile  # RabbitMQ Dockerfile with plugins
-│   ├── go.mod
-│   └── go.sum
-├── frontend/                # Frontend application
-├── plugins/                 # RabbitMQ plugins
-├── .env.example             # Example environment variables
-├── docker-compose.yml       # Multi-service Docker setup
-├── Makefile                 # Development commands
+├── cmd/                 # Application entry points
+├── config/              # Configuration files
+├── internal/            # Internal application packages
+│   ├── api/             # HTTP handlers, router, server
+│   ├── config/          # Config parsing logic
+│   ├── middlewares/     # HTTP middlewares
+│   ├── mocks/           # Generated mocks for testing
+│   ├── model/           # Data models
+│   ├── rabbitmq/        # RabbitMQ connection and consumers
+│   ├── repository/      # Database repositories
+│   ├── service/         # Business logic
+│   └── worker/          # Background workers for scheduled delivery
+├── migrations/          # Database migrations
+├── pkg/                 # External clients (Email, Telegram)
+├── plugins/             # RabbitMQ plugins
+├── web/                 # Frontend application
+├── .env.example         # Example environment variables
+├── docker-compose.yml   # Multi-service Docker setup
+├── Dockerfile           # Backend Dockerfile
+├── go.mod
+├── go.sum
+├── Makefile             # Development commands
+├── rabbitmq.dockerfile  # RabbitMQ Dockerfile with plugins
 └── README.md
 ````
 
@@ -217,5 +216,3 @@ It provides:
 * Notifications can be created via **API or UI**
 * Notifications are delivered via **Email (SMTP)** and **Telegram Bot**
 * Failed deliveries are retried automatically
-
-```
